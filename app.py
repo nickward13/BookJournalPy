@@ -1,3 +1,4 @@
+from pickle import GLOBAL
 from flask import Flask, render_template, request, redirect, url_for
 from azure.cosmos import CosmosClient
 from uuid import UUID, uuid4
@@ -7,6 +8,9 @@ import json
 import os
 URL = os.environ['ACCOUNT_URI']
 KEY = os.environ['ACCOUNT_KEY']
+
+# set global user ID until user ID's are a thing
+GLOBAL_USER_ID = 6
 
 # set up cosmos db connection
 DATABASE_NAME = 'BookJournal'
@@ -19,7 +23,7 @@ app = Flask(__name__)
 
 class Entry:
     id = ""
-    userid = "5"
+    userid = "{}".format(GLOBAL_USER_ID)
     title = ""
     author = ""
     rating = 0
@@ -29,7 +33,7 @@ class Entry:
 @app.route("/")
 def index():
     jsonJournalEntries = container.query_items(
-        query='SELECT * FROM c where c.userid="5"',
+        query='SELECT * FROM c where c.userid="{}"'.format(GLOBAL_USER_ID),
         enable_cross_partition_query=False
     )
 
