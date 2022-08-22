@@ -27,7 +27,8 @@ class Entry:
     title = ""
     author = ""
     rating = 0
-    dateRead = datetime.today()    
+    dateRead = datetime.today()
+    comments = ""   
 
 @app.route("/")
 def index():
@@ -49,6 +50,7 @@ def index():
         newEntry.author = dictEntry.get("author", "Unknown")
         newEntry.rating = dictEntry.get("rating", 0)
         newEntry.dateRead = dictEntry.get("dateRead", "1990/1/1")
+        newEntry.comments = dictEntry.get("comments", None)
         
         journalEntries.append(newEntry)
 
@@ -68,7 +70,7 @@ def add():
     newEntry.author=request.form.get("author", "Unknown")
     newEntry.rating=request.form.get("rating", 0)
     newEntry.dateRead=request.form.get("dateRead", "1990/1/1")
-    
+    newEntry.comments=request.form.get("comments", "")
 
     container.upsert_item({
         'id': newEntry.id,
@@ -76,7 +78,8 @@ def add():
         'title': newEntry.title,
         'author': newEntry.author,
         'rating': newEntry.rating,
-        'dateRead': newEntry.dateRead
+        'dateRead': newEntry.dateRead,
+        'comments': newEntry.comments
         }
     )
     return redirect(url_for("index"))
