@@ -27,8 +27,7 @@ class Entry:
     title = ""
     author = ""
     rating = 0
-    dateRead = datetime.today()
-    
+    dateRead = datetime.today()    
 
 @app.route("/")
 def index():
@@ -56,6 +55,9 @@ def index():
         print('Found one! - {}'.format(newEntry.title))
 
     print('Found {} journal entries in total'.format(len(journalEntries)))
+
+    journalEntries.sort(key=lambda x: x.dateRead, reverse=True)
+
     return render_template('index.html', journalEntries=journalEntries)
 
 @app.route("/add", methods=["POST"])
