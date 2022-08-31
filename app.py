@@ -94,3 +94,6 @@ def delete():
     ):
         container.delete_item(entry, partition_key='{}'.format(entryUserid))
         return redirect(url_for("index"))
+
+if __name__ == '__main__':
+   app.run()
