@@ -1,17 +1,55 @@
-@description('Location for the Cosmos DB account.')
 param location string = resourceGroup().location
 
-@description('Cosmos DB account name')
-var accountName = 'cosmos-${uniqueString(resourceGroup().id)}'
-
-@description('The name for the SQL API database')
+var cosmosDbAccountName = 'cosmos-${uniqueString(resourceGroup().id)}'
 var databaseName = 'BookJournal'
-
-@description('The name for the SQL API container')
 var containerName = 'JournalEntries'
 
-resource account 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
-  name: toLower(accountName)
+param appServicePlanSku string = 'F1'
+var appServicePlanName = 'appServicePlan-${uniqueString(resourceGroup().id)}'
+var webAppName = 'bookJournalWebApp-${uniqueString(resourceGroup().id)}'
+var linuxFxVersion = 'PYTHON|3.8'
+
+resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
+  name: appServicePlanName
+  location: location
+  sku: {
+    name: appServicePlanSku
+  }
+  kind: 'linux'
+  properties: {
+    reserved: true
+  }
+}
+
+resource webApp 'Microsoft.Web/sites@2022-03-01' = {
+  name: webAppName
+  location: location
+  properties: {
+    httpsOnly: true
+    serverFarmId: appServicePlan.id
+    siteConfig: {
+      linuxFxVersion: linuxFxVersion
+      minTlsVersion: '1.2'
+      ftpsState: 'FtpsOnly'
+      appSettings: [
+        {
+          name: 'ACCOUNT_URI'
+          value: cosmosDbAccount.properties.documentEndpoint
+        }
+        {
+          name: 'ACCOUNT_KEY'
+          value: cosmosDbAccount.listKeys().primaryMasterKey
+        }
+      ]
+    }
+  }
+  identity: {
+    type: 'SystemAssigned'
+  }
+}
+
+resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
+  name: toLower(cosmosDbAccountName)
   kind: 'GlobalDocumentDB'
   location: location
   properties: {
@@ -35,7 +73,7 @@ resource account 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
 }
 
 resource database 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2022-05-15' = {
-  parent: account
+  parent: cosmosDbAccount
   name: databaseName
   properties: {
     resource: {
