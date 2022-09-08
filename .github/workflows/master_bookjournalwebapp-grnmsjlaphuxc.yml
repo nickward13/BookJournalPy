@@ -16,48 +16,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-
-      - name: Set up Python version
-        uses: actions/setup-python@v1
+      - uses: azure/docker-login@v1
         with:
-          python-version: '3.8'
-
-      - name: Create and start virtual environment
-        run: |
-          python -m venv venv
-          source venv/bin/activate
+          login-server: acrgrnmsjlaphuxc.azurecr.io
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - run: |
+        docker build . -t acrgrnmsjlaphuxc.azurecr.io/bookjournal:${{ github.sha }}
+        docker push acrgrnmsjlaphuxc.azurecr.io/bookjournal:${{ github.sha }}
       
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-        
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
-      
-      - name: Upload artifact for deployment jobs
-        uses: actions/upload-artifact@v2
-        with:
-          name: python-app
-          path: |
-            . 
-            !venv/
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-
-    steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v2
-        with:
-          name: python-app
-          path: .
-          
-      - name: 'Deploy to Azure Web App'
-        uses: azure/webapps-deploy@v2
-        id: deploy-to-webapp
-        with:
-          app-name: 'bookJournalWebApp-grnmsjlaphuxc'
-          slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_185BDC272D7D4BDCA0274B8D20A48BC2 }}
