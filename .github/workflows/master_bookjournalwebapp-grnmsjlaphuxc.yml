@@ -24,5 +24,8 @@ jobs:
       - run: |
           docker build . -t acrgrnmsjlaphuxc.azurecr.io/bookjournal:${{ github.sha }}
           docker push acrgrnmsjlaphuxc.azurecr.io/bookjournal:${{ github.sha }}
-      
-
+      - uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'bookJournalWebApp-grnmsjlaphuxc'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_185BDC272D7D4BDCA0274B8D20A48BC2 }}
+          images: 'acrgrnmsjlaphuxc.azurecr.io/bookjournal:${{ github.sha }}'
