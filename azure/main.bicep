@@ -9,6 +9,19 @@ var appServicePlanName = 'appServicePlan-${uniqueString(resourceGroup().id)}'
 var webAppName = 'bookJournalWebApp-${uniqueString(resourceGroup().id)}'
 var linuxFxVersion = 'PYTHON|3.8'
 
+var acrName = 'acr${uniqueString(resourceGroup().id)}'
+
+resource azureContainerRegistry 'Microsoft.ContainerRegistry/registries@2021-09-01' = {
+  name: acrName
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    adminUserEnabled: true
+  }
+}
+
 resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: appServicePlanName
   location: location
