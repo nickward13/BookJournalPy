@@ -22,7 +22,7 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - run: |
-        docker build . -t acrgrnmsjlaphuxc.azurecr.io/bookjournal:${{ github.sha }}
-        docker push acrgrnmsjlaphuxc.azurecr.io/bookjournal:${{ github.sha }}
+          docker build . -t acrgrnmsjlaphuxc.azurecr.io/bookjournal:${{ github.sha }}
+          docker push acrgrnmsjlaphuxc.azurecr.io/bookjournal:${{ github.sha }}
       
 
