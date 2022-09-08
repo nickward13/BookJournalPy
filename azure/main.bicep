@@ -53,6 +53,22 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
           name: 'ACCOUNT_KEY'
           value: cosmosDbAccount.listKeys().primaryMasterKey
         }
+        {
+          name: 'WEBSITES_PORT'
+          value: '5000'
+        }
+        {
+          name: 'DOCKER_REGISTRY_SERVER_URL'
+          value: azureContainerRegistry.properties.loginServer
+        }
+        {
+          name: 'DOCKER_REGISTRY_SERVER_USERNAME'
+          value: azureContainerRegistry.listCredentials().username
+        }
+        {
+          name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
+          value: azureContainerRegistry.listCredentials().passwords[0].value
+        }
       ]
     }
   }
