@@ -1,9 +1,12 @@
 from pickle import GLOBAL
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
+from flask_session import Session
 from azure.cosmos import CosmosClient
 from uuid import UUID, uuid4
 from datetime import date, datetime
 import json
+import msal
+import app_config
 
 import os
 URL = os.environ['ACCOUNT_URI']
@@ -20,6 +23,8 @@ database = cosmosClient.get_database_client(DATABASE_NAME)
 container = database.get_container_client(CONTAINER_NAME)
 
 app = Flask(__name__)
+app.config.from_object(app_config)
+Session(app)
 
 class Entry:
     id = ""
@@ -30,37 +35,53 @@ class Entry:
     dateRead = datetime.today()
     comments = ""   
 
+# This section is needed for url_for("foo", _external=True) to automatically
+# generate http scheme when this sample is running on localhost,
+# and to generate https scheme when it is deployed behind reversed proxy.
+# See also https://flask.palletsprojects.com/en/1.0.x/deploying/wsgi-standalone/#proxy-setups
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
 @app.route("/")
 def index():
-    jsonJournalEntries = container.query_items(
-        query='SELECT * FROM c where c.userid="{}"'.format(GLOBAL_USER_ID),
-        enable_cross_partition_query=False
-    )
-
-    journalEntries = []
-
-    for jsonEntry in jsonJournalEntries:
+    if not session.get("user"):
+        session["flow"] = _build_auth_code_flow(scopes=app_config.SCOPE)
+        return render_template('index.html', auth_url=session["flow"]["auth_uri"], version=msal.__version__)
+    else:
+        user=session["user"]
+        print('User ID: {}'.format(user["oid"]))
+        print('Username: {}'.format(user["name"]))
         
-        dictEntry = json.loads(json.dumps(jsonEntry))
-        
-        newEntry = Entry()
-        newEntry.id = dictEntry.get('id', "Unknown")
-        newEntry.userid = dictEntry.get("userid", "Unknown")
-        newEntry.title = dictEntry.get("title", "Unknown")
-        newEntry.author = dictEntry.get("author", "Unknown")
-        newEntry.rating = dictEntry.get("rating", 0)
-        newEntry.dateRead = dictEntry.get("dateRead", "1990/1/1")
-        newEntry.comments = dictEntry.get("comments", None)
-        
-        journalEntries.append(newEntry)
+        jsonJournalEntries = container.query_items(
+            query='SELECT * FROM c where c.userid="{}"'.format(GLOBAL_USER_ID),
+            enable_cross_partition_query=False
+        )
 
-        print('Found one! - {}'.format(newEntry.title))
+        journalEntries = []
 
-    print('Found {} journal entries in total'.format(len(journalEntries)))
+        for jsonEntry in jsonJournalEntries:
+            
+            dictEntry = json.loads(json.dumps(jsonEntry))
+            
+            newEntry = Entry()
+            newEntry.id = dictEntry.get('id', "Unknown")
+            newEntry.userid = dictEntry.get("userid", "Unknown")
+            newEntry.title = dictEntry.get("title", "Unknown")
+            newEntry.author = dictEntry.get("author", "Unknown")
+            newEntry.rating = dictEntry.get("rating", 0)
+            newEntry.dateRead = dictEntry.get("dateRead", "1990/1/1")
+            newEntry.comments = dictEntry.get("comments", None)
+            
+            journalEntries.append(newEntry)
 
-    journalEntries.sort(key=lambda x: x.dateRead, reverse=True)
+            print('Found one! - {}'.format(newEntry.title))
 
-    return render_template('index.html', journalEntries=journalEntries)
+        print('Found {} journal entries in total'.format(len(journalEntries)))
+
+        journalEntries.sort(key=lambda x: x.dateRead, reverse=True)
+
+        return render_template('index.html', journalEntries=journalEntries, user=user, version=msal.__version__)
+
 
 @app.route("/add", methods=["POST"])
 def add():
@@ -94,6 +115,56 @@ def delete():
     ):
         container.delete_item(entry, partition_key='{}'.format(entryUserid))
         return redirect(url_for("index"))
+
+@app.route("/login")
+def login():
+    # Technically we could use empty list [] as scopes to do just sign in,
+    # here we choose to also collect end user consent upfront
+    session["flow"] = _build_auth_code_flow(scopes=app_config.SCOPE)
+    return render_template("login.html", auth_url=session["flow"]["auth_uri"], version=msal.__version__)
+
+@app.route(app_config.REDIRECT_PATH)  # Its absolute URL must match your app's redirect_uri set in AAD
+def authorized():
+    try:
+        cache = _load_cache()
+        result = _build_msal_app(cache=cache).acquire_token_by_auth_code_flow(
+            session.get("flow", {}), request.args)
+        if "error" in result:
+            return render_template("auth_error.html", result=result)
+        session["user"] = result.get("id_token_claims")
+        _save_cache(cache)
+    except ValueError:  # Usually caused by CSRF
+        pass  # Simply ignore them
+    return redirect(url_for("index"))
+
+@app.route("/logout")
+def logout():
+    session.clear()  # Wipe out user and its token cache from session
+    return redirect(  # Also logout from your tenant's web session
+        app_config.AUTHORITY + "/oauth2/v2.0/logout" +
+        "?post_logout_redirect_uri=" + url_for("index", _external=True))
+
+def _load_cache():
+    cache = msal.SerializableTokenCache()
+    if session.get("token_cache"):
+        cache.deserialize(session["token_cache"])
+    return cache
+
+def _save_cache(cache):
+    if cache.has_state_changed:
+        session["token_cache"] = cache.serialize()
+
+def _build_msal_app(cache=None, authority=None):
+    return msal.ConfidentialClientApplication(
+        app_config.CLIENT_ID, authority=authority or app_config.AUTHORITY,
+        client_credential=app_config.CLIENT_SECRET, token_cache=cache)
+
+def _build_auth_code_flow(authority=None, scopes=None):
+    return _build_msal_app(authority=authority).initiate_auth_code_flow(
+        scopes or [],
+        redirect_uri=url_for("authorized", _external=True))
+
+app.jinja_env.globals.update(_build_auth_code_flow=_build_auth_code_flow)  # Used in template
 
 if __name__ == '__main__':
    app.run()
