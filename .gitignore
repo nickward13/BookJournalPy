@@ -2,3 +2,4 @@
 /.vscode
 /__pycache__
 /flask_session
+/azure/dev.parameters.json
