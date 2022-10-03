@@ -11,6 +11,10 @@ var linuxFxVersion = 'PYTHON|3.8'
 
 var acrName = 'acr${uniqueString(resourceGroup().id)}'
 
+param B2C_TENANT string
+param B2C_CLIENT_ID string
+param B2C_CLIENT_SECRET string
+
 resource azureContainerRegistry 'Microsoft.ContainerRegistry/registries@2021-09-01' = {
   name: acrName
   location: location
@@ -68,6 +72,18 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
         {
           name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
           value: azureContainerRegistry.listCredentials().passwords[0].value
+        }
+        {
+          name: 'B2C_TENANT'
+          value: B2C_TENANT
+        }
+        {
+          name: 'B2C_CLIENT_ID'
+          value: B2C_CLIENT_ID
+        }
+        {
+          name: 'B2C_CLIENT_SECRET'
+          value: B2C_CLIENT_SECRET
         }
       ]
     }
