@@ -4,6 +4,7 @@
  
 <h1 style="margin-top: 50px;" class="ui center aligned header">Book Journal</h1>
 
+{% if user %}
 <form class="ui form" action="/add" method="post">
     <div>
         <label for="title">Title</label>
@@ -27,5 +28,11 @@
         <a href="/delete?id={{entry.id}}&userid={{entry.userid}}">Delete</a>
     </div>
 {% endfor %}
+
+<li><a href="/logout">Logout</a></li>
+
+{% else %}
+<li><a href="{{ auth_url }}">Sign In</a></li>
+{% endif %}
 
 {% endblock %}
