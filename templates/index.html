@@ -5,6 +5,10 @@
 <h1 style="margin-top: 50px;" class="ui center aligned header">Book Journal</h1>
 
 {% if user %}
+<p align="right">
+<a href="/logout"><button class="ui blue button">Logout</button></a>
+</p>
+
 <form class="ui form" action="/add" method="post">
     <div>
         <label for="title">Title</label>
@@ -29,10 +33,10 @@
     </div>
 {% endfor %}
 
-<li><a href="/logout">Logout</a></li>
-
 {% else %}
-<li><a href="{{ auth_url }}">Sign In</a></li>
+<p align="right">
+<a href="{{ auth_url }}"><button class="ui blue button">Login</button></a>
+</p>
 {% endif %}
 
 {% endblock %}
