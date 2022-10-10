@@ -53,7 +53,7 @@ def index():
         print('Username: {}'.format(user["name"]))
         
         jsonJournalEntries = container.query_items(
-            query='SELECT * FROM c where c.userid="{}"'.format(GLOBAL_USER_ID),
+            query='SELECT * FROM c where c.userid="{}"'.format(user["oid"]),
             enable_cross_partition_query=False
         )
 
@@ -85,8 +85,11 @@ def index():
 
 @app.route("/add", methods=["POST"])
 def add():
+    user=session["user"]
+    
     newEntry = Entry()
     newEntry.id=uuid4().__str__()
+    newEntry.userid="{}".format(user["oid"])
     newEntry.title=request.form.get("title", "Unknown")
     newEntry.author=request.form.get("author", "Unknown")
     newEntry.rating=request.form.get("rating", 0)
