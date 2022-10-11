@@ -18,14 +18,14 @@ jobs:
       - uses: actions/checkout@v2
       - uses: azure/docker-login@v1
         with:
-          login-server: acrgrnmsjlaphuxc.azurecr.io
+          login-server: acr3jqkeczurtty4.azurecr.io
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - run: |
-          docker build . -t acrgrnmsjlaphuxc.azurecr.io/bookjournal:${{ github.sha }}
-          docker push acrgrnmsjlaphuxc.azurecr.io/bookjournal:${{ github.sha }}
+          docker build . -t acr3jqkeczurtty4.azurecr.io/bookjournal:${{ github.sha }}
+          docker push acr3jqkeczurtty4.azurecr.io/bookjournal:${{ github.sha }}
       - uses: azure/webapps-deploy@v2
         with:
           app-name: 'bookJournalWebApp-grnmsjlaphuxc'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_185BDC272D7D4BDCA0274B8D20A48BC2 }}
-          images: 'acrgrnmsjlaphuxc.azurecr.io/bookjournal:${{ github.sha }}'
+          images: 'acr3jqkeczurtty4.azurecr.io/bookjournal:${{ github.sha }}'
