@@ -8,11 +8,13 @@ param appServicePlanSku string = 'F1'
 var appServicePlanName = 'appServicePlan-${uniqueString(resourceGroup().id)}'
 var webAppName = 'bookJournalWebApp-${uniqueString(resourceGroup().id)}'
 var linuxFxVersion = 'PYTHON|3.8'
-
+var appInsightsName = 'bookJournalAI-${uniqueString(resourceGroup().id)}'
 var acrName = 'acr${uniqueString(resourceGroup().id)}'
 
 param B2C_TENANT string
 param B2C_CLIENT_ID string
+
+@secure()
 param B2C_CLIENT_SECRET string
 
 resource azureContainerRegistry 'Microsoft.ContainerRegistry/registries@2021-09-01' = {
@@ -85,6 +87,22 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
           name: 'B2C_CLIENT_SECRET'
           value: B2C_CLIENT_SECRET
         }
+        {
+          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+          value: appInsights.properties.InstrumentationKey
+        }
+        {
+          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+          value: appInsights.properties.ConnectionString
+        }
+        {
+          name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
+          value: '~2'
+        }
+        {
+          name: 'XDT_MicrosoftApplicationInsights_Mode'
+          value: 'default'
+        }
       ]
     }
   }
@@ -153,5 +171,15 @@ resource container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/container
         ]
       }
     }
+  }
+}
+
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: appInsightsName
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    Request_Source: 'rest'
   }
 }
