@@ -7,11 +7,15 @@ from datetime import date, datetime
 import json
 import msal
 import app_config
+import logging
+from opencensus.ext.azure.log_exporter import AzureLogHandler
 
 import os
 URL = os.environ['ACCOUNT_URI']
 KEY = os.environ['ACCOUNT_KEY']
 
+logger = logging.getLogger(__name__)
+logger.addHandler(AzureLogHandler(connection_string=os.environ['APPLICATIONINSIGHTS_CONNECTION_STRING']))
 # set global user ID until user ID's are a thing
 GLOBAL_USER_ID = 6
 
@@ -46,11 +50,11 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 def index():
     if not session.get("user"):
         session["flow"] = _build_auth_code_flow(scopes=app_config.SCOPE)
+        logger.warning('No user logged in.')
         return render_template('index.html', auth_url=session["flow"]["auth_uri"], version=msal.__version__)
     else:
         user=session["user"]
-        print('User ID: {}'.format(user["oid"]))
-        print('Username: {}'.format(user["name"]))
+        logger.warning('User logged in with ID: "{}"'.format(user["oid"]))
         
         jsonJournalEntries = container.query_items(
             query='SELECT * FROM c where c.userid="{}"'.format(user["oid"]),
@@ -74,9 +78,9 @@ def index():
             
             journalEntries.append(newEntry)
 
-            print('Found one! - {}'.format(newEntry.title))
+            logger.warning('Found one! - {}'.format(newEntry.title))
 
-        print('Found {} journal entries in total'.format(len(journalEntries)))
+        logger.warning('Found {} journal entries in total'.format(len(journalEntries)))
 
         journalEntries.sort(key=lambda x: x.dateRead, reverse=True)
 
