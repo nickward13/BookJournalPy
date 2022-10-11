@@ -9,24 +9,16 @@ var appServicePlanName = 'appServicePlan-${uniqueString(resourceGroup().id)}'
 var webAppName = 'bookJournalWebApp-${uniqueString(resourceGroup().id)}'
 var linuxFxVersion = 'PYTHON|3.8'
 var appInsightsName = 'bookJournalAI-${uniqueString(resourceGroup().id)}'
-var acrName = 'acr${uniqueString(resourceGroup().id)}'
 
 param B2C_TENANT string
 param B2C_CLIENT_ID string
+param DOCKER_REGISTRY_SERVER_URL string
+param DOCKER_REGISTRY_SERVER_USERNAME string
+@secure()
+param DOCKER_REGISTRY_SERVER_PASSWORD string
 
 @secure()
 param B2C_CLIENT_SECRET string
-
-resource azureContainerRegistry 'Microsoft.ContainerRegistry/registries@2021-09-01' = {
-  name: acrName
-  location: location
-  sku: {
-    name: 'Standard'
-  }
-  properties: {
-    adminUserEnabled: true
-  }
-}
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: appServicePlanName
@@ -65,15 +57,15 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'DOCKER_REGISTRY_SERVER_URL'
-          value: azureContainerRegistry.properties.loginServer
+          value: DOCKER_REGISTRY_SERVER_URL
         }
         {
           name: 'DOCKER_REGISTRY_SERVER_USERNAME'
-          value: azureContainerRegistry.listCredentials().username
+          value: DOCKER_REGISTRY_SERVER_USERNAME
         }
         {
           name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
-          value: azureContainerRegistry.listCredentials().passwords[0].value
+          value: DOCKER_REGISTRY_SERVER_PASSWORD
         }
         {
           name: 'B2C_TENANT'
