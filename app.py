@@ -7,8 +7,13 @@ from datetime import date, datetime
 import json
 import msal
 import app_config
+
+# for App Insights
 import logging
 from opencensus.ext.azure.log_exporter import AzureLogHandler
+from opencensus.ext.azure.trace_exporter import AzureExporter
+from opencensus.ext.flask.flask_middleware import FlaskMiddleware
+from opencensus.trace.samplers import ProbabilitySampler
 
 import os
 URL = os.environ['ACCOUNT_URI']
@@ -16,6 +21,7 @@ KEY = os.environ['ACCOUNT_KEY']
 
 logger = logging.getLogger(__name__)
 logger.addHandler(AzureLogHandler(connection_string=os.environ['APPLICATIONINSIGHTS_CONNECTION_STRING']))
+
 # set global user ID until user ID's are a thing
 GLOBAL_USER_ID = 6
 
@@ -26,7 +32,13 @@ cosmosClient = CosmosClient(URL, credential=KEY)
 database = cosmosClient.get_database_client(DATABASE_NAME)
 container = database.get_container_client(CONTAINER_NAME)
 
+# set up app
 app = Flask(__name__)
+middleware = FlaskMiddleware(
+    app,
+    exporter=AzureExporter(connection_string=os.environ['APPLICATIONINSIGHTS_CONNECTION_STRING']),
+    sampler=ProbabilitySampler(rate=1.0)
+)
 app.config.from_object(app_config)
 Session(app)
 

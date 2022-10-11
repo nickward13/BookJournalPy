@@ -3,3 +3,4 @@ azure-cosmos==4.3.0
 flask-session>=0.3.2,<0.5
 msal>=1.7,<2
 opencensus-ext-azure==1.1.7
+opencensus-ext-flask==0.8.1
