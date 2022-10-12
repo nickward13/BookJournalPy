@@ -2,7 +2,7 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 
-name: Build and deploy Python app to Azure Web App - bookJournalWebApp-grnmsjlaphuxc
+name: Build and deploy Python app to Azure Web App
 
 on:
   push:
@@ -24,8 +24,26 @@ jobs:
       - run: |
           docker build . -t acr3jqkeczurtty4.azurecr.io/bookjournal:${{ github.sha }}
           docker push acr3jqkeczurtty4.azurecr.io/bookjournal:${{ github.sha }}
+  
+  deploy-dev:
+    runs-on: ubuntu-latest
+    environment: 'dev'
+    needs: build
+    steps:
       - uses: azure/webapps-deploy@v2
         with:
           app-name: 'bookJournalWebApp-grnmsjlaphuxc'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_185BDC272D7D4BDCA0274B8D20A48BC2 }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           images: 'acr3jqkeczurtty4.azurecr.io/bookjournal:${{ github.sha }}'
+  
+  deploy-prod:
+    runs-on: ubuntu-latest
+    environment: 'prod'
+    needs: [build, deploy-dev]
+    steps:
+      - uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'bookJournalWebApp-sonygtr54alba'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          images: 'acr3jqkeczurtty4.azurecr.io/bookjournal:${{ github.sha }}'
+
