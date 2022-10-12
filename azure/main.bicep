@@ -1,4 +1,5 @@
 param location string = resourceGroup().location
+param production bool = false
 
 var cosmosDbAccountName = 'cosmos-${uniqueString(resourceGroup().id)}'
 var databaseName = 'BookJournal'
@@ -101,6 +102,18 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   identity: {
     type: 'SystemAssigned'
   }
+}
+
+resource stagingSlot 'Microsoft.Web/sites/slots@2022-03-01' = if (production) {
+  name: '${webAppName}/staging'
+  kind: 'app'
+  location: location
+  properties: {
+    serverFarmId: appServicePlan.id
+  }
+  dependsOn: [
+    webApp
+  ]
 }
 
 resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
