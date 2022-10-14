@@ -60,13 +60,24 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - uses: azure/webapps-deploy@v2
+      - name: deploy-infra
+        uses: azure/arm-deploy@v1
+        with:
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION }}
+          resourceGroupName: ${{ secrets.AZURE_RG }}
+          template: ./azure/main.bicep
+          parameters: ${{ secrets.BICEP_PARAMETERS }}
+          failOnStdErr: false
+
+      - name: deploy-app-staging
+        uses: azure/webapps-deploy@v2
         with:
           app-name: 'bookJournalWebApp-sonygtr54alba'
           slot-name: staging
           images: 'acr3jqkeczurtty4.azurecr.io/bookjournal:${{ github.sha }}'
       
-      - run: az webapp deployment slot swap -g BookJournal -n bookJournalWebApp-sonygtr54alba --slot staging --target-slot production
+      - name: deploy-app-production
+        run: az webapp deployment slot swap -g BookJournal -n bookJournalWebApp-sonygtr54alba --slot staging --target-slot production
       
       - run: az logout
 
