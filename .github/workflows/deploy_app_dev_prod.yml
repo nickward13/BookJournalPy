@@ -30,10 +30,25 @@ jobs:
     environment: 'Dev'
     needs: build
     steps:
-      - uses: azure/webapps-deploy@v2
+      - uses: actions/checkout@main
+
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: deploy-infra
+        uses: azure/arm-deploy@v1
+        with:
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION }}
+          resourceGroupName: ${{ secrets.AZURE_RG }}
+          template: ./azure/main.bicep
+          parameters: $${{ secrets.BICEP_PARAMETERS }}
+          failOnStdErr: false
+
+      - name: deploy-app
+        uses: azure/webapps-deploy@v2
         with:
           app-name: 'bookJournalWebApp-grnmsjlaphuxc'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           images: 'acr3jqkeczurtty4.azurecr.io/bookjournal:${{ github.sha }}'
   
   deploy-prod:
