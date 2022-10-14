@@ -51,9 +51,7 @@ jobs:
           slot-name: staging
           images: 'acr3jqkeczurtty4.azurecr.io/bookjournal:${{ github.sha }}'
       
-      - run: az webapp deployment slot swap -g BookJournal -n bookJournalWebApp-sonygtr54alba -s staging
-          url=$(az webapp show -g BookJournal -n bookJournalWebApp-sonygtr54alba --query "defaultHostName" -o tsv)
-          echo "::set-output name=url::http://$url"
+      - run: az webapp deployment slot swap -g BookJournal -n bookJournalWebApp-sonygtr54alba --slot staging --target-slot production
       
       - run: az logout
 
