@@ -97,6 +97,18 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
           name: 'XDT_MicrosoftApplicationInsights_Mode'
           value: 'default'
         }
+        {
+          name: 'WEBSITE_SWAP_WARMUP_PING_PATH'
+          value: '/healthcheck'
+        }
+        {
+          name: 'WEBSITE_SWAP_WARMUP_PING_STATUSES'
+          value: '200'
+        }
+        {
+          name: 'WEBSITE_WARMUP_PATH'
+          value: '/healthcheck'
+        }
       ]
     }
   }
