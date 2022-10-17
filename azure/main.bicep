@@ -43,6 +43,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
       linuxFxVersion: linuxFxVersion
       minTlsVersion: '1.2'
       ftpsState: 'FtpsOnly'
+      healthCheckPath: '/healthcheck'
       appSettings: [
         {
           name: 'ACCOUNT_URI'
