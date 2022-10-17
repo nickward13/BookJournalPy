@@ -136,6 +136,15 @@ def delete():
         container.delete_item(entry, partition_key='{}'.format(entryUserid))
         return redirect(url_for("index"))
 
+@app.route("/healthcheck")
+def healthcheck():
+    for entry in container.query_items(
+        query='SELECT VALUE COUNT(1) FROM c WHERE c.userid = "0"',
+        enable_cross_partition_query=False
+    ):
+        return "Healthy", 200
+    return "Unhealth", 500
+
 @app.route("/login")
 def login():
     # Technically we could use empty list [] as scopes to do just sign in,
