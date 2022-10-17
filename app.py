@@ -18,9 +18,10 @@ from opencensus.trace.samplers import ProbabilitySampler
 import os
 URL = os.environ['ACCOUNT_URI']
 KEY = os.environ['ACCOUNT_KEY']
+APPLICATIONINSIGHTS_CONNECTION_STRING = os.environ['APPLICATIONINSIGHTS_CONNECTION_STRING']
 
 logger = logging.getLogger(__name__)
-logger.addHandler(AzureLogHandler(connection_string=os.environ['APPLICATIONINSIGHTS_CONNECTION_STRING']))
+logger.addHandler(AzureLogHandler(connection_string=APPLICATIONINSIGHTS_CONNECTION_STRING))
 
 # set global user ID until user ID's are a thing
 GLOBAL_USER_ID = 6
@@ -36,7 +37,7 @@ container = database.get_container_client(CONTAINER_NAME)
 app = Flask(__name__)
 middleware = FlaskMiddleware(
     app,
-    exporter=AzureExporter(connection_string=os.environ['APPLICATIONINSIGHTS_CONNECTION_STRING']),
+    exporter=AzureExporter(connection_string=APPLICATIONINSIGHTS_CONNECTION_STRING),
     sampler=ProbabilitySampler(rate=1.0)
 )
 app.config.from_object(app_config)
@@ -63,7 +64,7 @@ def index():
     if not session.get("user"):
         session["flow"] = _build_auth_code_flow(scopes=app_config.SCOPE)
         logger.warning('No user logged in.')
-        return render_template('index.html', auth_url=session["flow"]["auth_uri"], version=msal.__version__)
+        return render_template('index.html', auth_url=session["flow"]["auth_uri"], version=msal.__version__, APPLICATIONINSIGHTS_CONNECTION_STRING=APPLICATIONINSIGHTS_CONNECTION_STRING)
     else:
         user=session["user"]
         logger.warning('User logged in with ID: "{}"'.format(user["oid"]))
@@ -96,7 +97,7 @@ def index():
 
         journalEntries.sort(key=lambda x: x.dateRead, reverse=True)
 
-        return render_template('index.html', journalEntries=journalEntries, user=user, version=msal.__version__)
+        return render_template('index.html', journalEntries=journalEntries, user=user, version=msal.__version__, APPLICATIONINSIGHTS_CONNECTION_STRING=APPLICATIONINSIGHTS_CONNECTION_STRING)
 
 
 @app.route("/add", methods=["POST"])
@@ -140,7 +141,7 @@ def login():
     # Technically we could use empty list [] as scopes to do just sign in,
     # here we choose to also collect end user consent upfront
     session["flow"] = _build_auth_code_flow(scopes=app_config.SCOPE)
-    return render_template("login.html", auth_url=session["flow"]["auth_uri"], version=msal.__version__)
+    return render_template("login.html", auth_url=session["flow"]["auth_uri"], version=msal.__version__, APPLICATIONINSIGHTS_CONNECTION_STRING=APPLICATIONINSIGHTS_CONNECTION_STRING)
 
 @app.route(app_config.REDIRECT_PATH)  # Its absolute URL must match your app's redirect_uri set in AAD
 def authorized():
@@ -149,7 +150,7 @@ def authorized():
         result = _build_msal_app(cache=cache).acquire_token_by_auth_code_flow(
             session.get("flow", {}), request.args)
         if "error" in result:
-            return render_template("auth_error.html", result=result)
+            return render_template("auth_error.html", result=result, APPLICATIONINSIGHTS_CONNECTION_STRING=APPLICATIONINSIGHTS_CONNECTION_STRING)
         session["user"] = result.get("id_token_claims")
         _save_cache(cache)
     except ValueError:  # Usually caused by CSRF
