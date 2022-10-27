@@ -150,6 +150,9 @@ resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
         name: 'EnableServerless'
       }
     ]
+    backupPolicy: {
+      type: 'Continuous'
+    }
   }
 }
 
