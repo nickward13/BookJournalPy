@@ -6,7 +6,7 @@
 
 {% if user %}
 <p align="right">
-<a href="/logout"><button class="ui blue button">Logout</button></a>
+<a href="/logout"><button class="ui button">Logout</button></a>
 </p>
 
 <form class="ui form" action="/add" method="post">
@@ -16,9 +16,9 @@
         <label for="author">Author</label>
         <input type="text" name="author" placeholder="Enter author...">
         <label for="rating">Rating</label>
-        <input type="number" name="rating" value="5" max="5" min="1">
+        <input id="rating" type="number" name="rating" value="5" max="5" min="1">
         <label for="dateRead">Date Read</label>
-        <input type="date" name="dateRead">
+        <input id="dateRead" type="date" name="dateRead">
         <label for="comments">Comments</label>
         <textarea name="comments" rows="4" placeholder="Comments..."></textarea>
         <br>
