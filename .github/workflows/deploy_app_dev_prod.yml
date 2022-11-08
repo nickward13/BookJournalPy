@@ -18,12 +18,12 @@ jobs:
       - uses: actions/checkout@v2
       - uses: azure/docker-login@v1
         with:
-          login-server: acr3jqkeczurtty4.azurecr.io
+          login-server: acrifsyh7uvf6uis.azurecr.io
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - run: |
-          docker build . -t acr3jqkeczurtty4.azurecr.io/bookjournal:${{ github.sha }}
-          docker push acr3jqkeczurtty4.azurecr.io/bookjournal:${{ github.sha }}
+          docker build . -t acrifsyh7uvf6uis.azurecr.io/bookjournal:${{ github.sha }}
+          docker push acrifsyh7uvf6uis.azurecr.io/bookjournal:${{ github.sha }}
   
   deploy-dev:
     runs-on: ubuntu-latest
@@ -49,7 +49,7 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'bookJournalWebApp-grnmsjlaphuxc'
-          images: 'acr3jqkeczurtty4.azurecr.io/bookjournal:${{ github.sha }}'
+          images: 'acrifsyh7uvf6uis.azurecr.io/bookjournal:${{ github.sha }}'
   
   deploy-prod:
     runs-on: ubuntu-latest
@@ -76,7 +76,7 @@ jobs:
         with:
           app-name: 'bookJournalWebApp-sonygtr54alba'
           slot-name: staging
-          images: 'acr3jqkeczurtty4.azurecr.io/bookjournal:${{ github.sha }}'
+          images: 'acrifsyh7uvf6uis.azurecr.io/bookjournal:${{ github.sha }}'
       
       - name: deploy-app-production
         run: az webapp deployment slot swap -g BookJournal -n bookJournalWebApp-sonygtr54alba --slot staging --target-slot production
