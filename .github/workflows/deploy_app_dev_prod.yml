@@ -48,7 +48,7 @@ jobs:
       - name: deploy-app
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'bookJournalWebApp-grnmsjlaphuxc'
+          app-name: 'bookJournalWebApp-ak4fssfpfqa66'
           images: 'acrifsyh7uvf6uis.azurecr.io/bookjournal:${{ github.sha }}'
   
   deploy-prod:
