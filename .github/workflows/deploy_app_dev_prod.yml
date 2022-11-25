@@ -79,7 +79,7 @@ jobs:
           images: 'acrifsyh7uvf6uis.azurecr.io/bookjournal:${{ github.sha }}'
       
       - name: deploy-app-production
-        run: az webapp deployment slot swap -g BookJournal -n bookJournalWebApp-y23xitl7od2ku --slot staging --target-slot production
+        run: az webapp deployment slot swap -g BookJournalProd -n bookJournalWebApp-y23xitl7od2ku --slot staging --target-slot production
       
       - run: az logout
 
