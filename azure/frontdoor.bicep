@@ -76,3 +76,5 @@ resource frontDoorRoute 'Microsoft.Cdn/profiles/afdEndpoints/routes@2021-06-01' 
     httpsRedirect: 'Enabled'
   }
 }
+
+output frontDoorEndpointHostName string = frontDoorEndpoint.properties.hostName

@@ -220,4 +220,3 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 }
 
 output appServiceHostName string = webApp.properties.defaultHostName
-output frontDoorEndpointHostName string = frontDoorEndpoint.properties.hostName
