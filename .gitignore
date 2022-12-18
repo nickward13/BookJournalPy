@@ -4,3 +4,4 @@
 /flask_session
 /azure/dev.parameters.json
 /azure/prod.parameters.json
+azure/frontdoor.parameters.json
