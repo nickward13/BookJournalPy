@@ -44,20 +44,6 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
       healthCheckPath: '/healthcheck'
-      ipSecurityRestrictions: [
-        {
-          tag: 'ServiceTag'
-          ipAddress: 'AzureFrontDoor.Backend'
-          action: 'Allow'
-          priority: 100
-          headers: {
-            'x-azure-fdid': [
-              frontDoorProfile.properties.frontDoorId
-            ]
-          }
-          name: 'Allow traffic from Front Door'
-        }
-      ]
       appSettings: [
         {
           name: 'ACCOUNT_URI'
@@ -132,15 +118,13 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
 }
 
 resource stagingSlot 'Microsoft.Web/sites/slots@2022-03-01' = if (production) {
-  name: '${webAppName}/staging'
+  parent: webApp
+  name: 'staging'
   kind: 'app'
   location: location
   properties: {
     serverFarmId: appServicePlan.id
   }
-  dependsOn: [
-    webApp
-  ]
 }
 
 resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
@@ -219,4 +203,4 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-output appServiceHostName string = webApp.properties.defaultHostName
+output webAppName string = webAppName
