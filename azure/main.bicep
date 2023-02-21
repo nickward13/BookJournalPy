@@ -109,6 +109,10 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
           name: 'WEBSITE_WARMUP_PATH'
           value: '/healthcheck'
         }
+        {
+          name: 'REDIRECT_URI'
+          value: 'https://bookJournalWebApp-${uniqueString(resourceGroup().id)}/getAToken'
+        }
       ]
     }
   }
