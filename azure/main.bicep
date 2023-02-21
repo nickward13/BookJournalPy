@@ -111,7 +111,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'REDIRECT_URI'
-          value: 'https://bookJournalWebApp-${uniqueString(resourceGroup().id)}/getAToken'
+          value: 'https://bookJournalWebApp-${uniqueString(resourceGroup().id)}.azurewebsites.net/getAToken'
         }
       ]
     }
