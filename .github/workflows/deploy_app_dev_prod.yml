@@ -92,6 +92,7 @@ jobs:
       
       - name: Deploy Azure Front Door
         id: deploy-afd
+        if: steps.filter.outputs.infra == 'true'
         uses: azure/arm-deploy@v1
         with:
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION }}
