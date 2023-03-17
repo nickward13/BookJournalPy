@@ -35,8 +35,17 @@ jobs:
       - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            infra:
+              - 'azure/**'
 
-      - name: deploy-infra
+      - name: Deploy dev infrastructure
+        id: deploy-infra
+        if: steps.filter.outputs.infra == 'true'
         uses: azure/arm-deploy@v1
         with:
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION }}
@@ -45,7 +54,8 @@ jobs:
           parameters: ${{ secrets.BICEP_PARAMETERS }}
           failOnStdErr: false
 
-      - name: deploy-app
+      - name: Deploy app to dev
+        id: deploy-app
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'bookJournalWebApp-ak4fssfpfqa66'
@@ -62,8 +72,16 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            infra:
+              - 'azure/**'
+
       - name: Deploy infrastructure
         id: deploy-infra
+        if: steps.filter.outputs.infra == 'true'
         uses: azure/arm-deploy@v1
         with:
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION }}
@@ -82,14 +100,16 @@ jobs:
           parameters: webAppName=${{ steps.deploy-infra.outputs.webAppName}}
           failOnStdErr: false
 
-      - name: deploy-app-staging
+      - name: Deploy app to staging
+        id: deploy-app-staging
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'bookJournalWebApp-y23xitl7od2ku'
           slot-name: staging
           images: 'acrifsyh7uvf6uis.azurecr.io/bookjournal:${{ github.sha }}'
       
-      - name: deploy-app-production
+      - name: Deploy app to production
+        id: deploy-app-production
         run: az webapp deployment slot swap -g BookJournalProd -n bookJournalWebApp-y23xitl7od2ku --slot staging --target-slot production
       
       - run: az logout
