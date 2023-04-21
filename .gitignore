@@ -5,3 +5,4 @@
 /azure/dev.parameters.json
 /azure/prod.parameters.json
 azure/frontdoor.parameters.json
+/modules/__pycache__

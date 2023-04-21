@@ -1,9 +1,7 @@
-from pickle import GLOBAL
+import os
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_session import Session
-from azure.cosmos import CosmosClient
 from uuid import UUID, uuid4
-from datetime import date, datetime
 import json
 import msal
 import app_config
@@ -15,23 +13,14 @@ from opencensus.ext.azure.trace_exporter import AzureExporter
 from opencensus.ext.flask.flask_middleware import FlaskMiddleware
 from opencensus.trace.samplers import ProbabilitySampler
 
-import os
-URL = os.environ['ACCOUNT_URI']
-KEY = os.environ['ACCOUNT_KEY']
+# my modules
+import modules.openai as openai
+import modules.journal as journal
+
 APPLICATIONINSIGHTS_CONNECTION_STRING = os.environ['APPLICATIONINSIGHTS_CONNECTION_STRING']
 
 logger = logging.getLogger(__name__)
 logger.addHandler(AzureLogHandler(connection_string=APPLICATIONINSIGHTS_CONNECTION_STRING))
-
-# set global user ID until user ID's are a thing
-GLOBAL_USER_ID = 6
-
-# set up cosmos db connection
-DATABASE_NAME = 'BookJournal'
-CONTAINER_NAME = 'JournalEntries'
-cosmosClient = CosmosClient(URL, credential=KEY)
-database = cosmosClient.get_database_client(DATABASE_NAME)
-container = database.get_container_client(CONTAINER_NAME)
 
 # set up app
 app = Flask(__name__)
@@ -42,15 +31,6 @@ middleware = FlaskMiddleware(
 )
 app.config.from_object(app_config)
 Session(app)
-
-class Entry:
-    id = ""
-    userid = "{}".format(GLOBAL_USER_ID)
-    title = ""
-    author = ""
-    rating = 0
-    dateRead = datetime.today()
-    comments = ""   
 
 # This section is needed for url_for("foo", _external=True) to automatically
 # generate http scheme when this sample is running on localhost,
@@ -64,86 +44,72 @@ def index():
     if not session.get("user"):
         session["flow"] = _build_auth_code_flow(scopes=app_config.SCOPE)
         logger.warning('No user logged in.')
+
         return render_template('index.html', auth_url=session["flow"]["auth_uri"], version=msal.__version__, APPLICATIONINSIGHTS_CONNECTION_STRING=APPLICATIONINSIGHTS_CONNECTION_STRING)
     else:
         user=session["user"]
         logger.warning('User logged in with ID: "{}"'.format(user["oid"]))
         
-        jsonJournalEntries = container.query_items(
-            query='SELECT * FROM c where c.userid="{}"'.format(user["oid"]),
-            enable_cross_partition_query=False
-        )
-
-        journalEntries = []
-
-        for jsonEntry in jsonJournalEntries:
-            
-            dictEntry = json.loads(json.dumps(jsonEntry))
-            
-            newEntry = Entry()
-            newEntry.id = dictEntry.get('id', "Unknown")
-            newEntry.userid = dictEntry.get("userid", "Unknown")
-            newEntry.title = dictEntry.get("title", "Unknown")
-            newEntry.author = dictEntry.get("author", "Unknown")
-            newEntry.rating = dictEntry.get("rating", 0)
-            newEntry.dateRead = dictEntry.get("dateRead", "1990/1/1")
-            newEntry.comments = dictEntry.get("comments", None)
-            
-            journalEntries.append(newEntry)
-
-            logger.warning('Found one! - {}'.format(newEntry.title))
-
-        logger.warning('Found {} journal entries in total'.format(len(journalEntries)))
-
-        journalEntries.sort(key=lambda x: x.dateRead, reverse=True)
+        journalEntries = journal.getEntries(user["oid"])
+        logger.warning('Retrieved {} journal entries for user "{}"'.format(len(journalEntries), user["oid"]))
 
         return render_template('index.html', journalEntries=journalEntries, user=user, version=msal.__version__, APPLICATIONINSIGHTS_CONNECTION_STRING=APPLICATIONINSIGHTS_CONNECTION_STRING)
 
 
+
+@app.route('/annualreview')
+def annualreview():
+    if not session.get("user"):
+        # redirect user to index page
+        return redirect(url_for("index"))
+    else:
+        user=session["user"]
+        logger.warning('User logged in with ID: "{}"'.format(user["oid"]))
+
+        journalEntries = journal.getEntries(user["oid"])
+        logger.warning('Retrieved {} journal entries for user "{}"'.format(len(journalEntries), user["oid"]))
+
+        # create annual review
+        review = openai.create_annual_review(journalEntries)
+        # replace newlines with html line breaks
+        review = review.replace("\n", "<br>")
+        
+        return render_template('annualreview.html', review=review, user=user, version=msal.__version__, APPLICATIONINSIGHTS_CONNECTION_STRING=APPLICATIONINSIGHTS_CONNECTION_STRING)
+
 @app.route("/add", methods=["POST"])
 def add():
     user=session["user"]
-    
-    newEntry = Entry()
+
+    newEntry = journal.Entry()
     newEntry.id=uuid4().__str__()
-    newEntry.userid="{}".format(user["oid"])
+    newEntry.userid=user["oid"]
     newEntry.title=request.form.get("title", "Unknown")
     newEntry.author=request.form.get("author", "Unknown")
     newEntry.rating=request.form.get("rating", 0)
     newEntry.dateRead=request.form.get("dateRead", "1990/1/1")
     newEntry.comments=request.form.get("comments", "")
 
-    container.upsert_item({
-        'id': newEntry.id,
-        'userid': newEntry.userid,
-        'title': newEntry.title,
-        'author': newEntry.author,
-        'rating': newEntry.rating,
-        'dateRead': newEntry.dateRead,
-        'comments': newEntry.comments
-        }
-    )
+    journal.addEntry(newEntry)
+    logger.warning('Added journal entry for user "{}"'.format(user["oid"]))
+
     return redirect(url_for("index"))
 
 @app.route("/delete")
 def delete():
     entryId = request.args.get('id', None)
     entryUserid = request.args.get('userid', None)
-    for entry in container.query_items(
-        query='SELECT * FROM c WHERE c.userid="{}" AND c.id="{}"'.format(entryUserid, entryId),
-        enable_cross_partition_query=False
-    ):
-        container.delete_item(entry, partition_key='{}'.format(entryUserid))
-        return redirect(url_for("index"))
+
+    journal.deleteEntry(entryId, entryUserid)
+    logger.warning('Deleted journal entry with ID "{}" for user "{}"'.format(entryId, entryUserid))
+    
+    return redirect(url_for("index"))
 
 @app.route("/healthcheck")
 def healthcheck():
-    for entry in container.query_items(
-        query='SELECT VALUE COUNT(1) FROM c WHERE c.userid = "0"',
-        enable_cross_partition_query=False
-    ):
+    if journal.isAlive():
         return "Healthy", 200
-    return "Unhealth", 500
+    else:
+        return "Unhealthy", 500
 
 @app.route("/login")
 def login():
