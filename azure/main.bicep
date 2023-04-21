@@ -1,25 +1,30 @@
 param location string = resourceGroup().location
 param production bool = false
 
-var cosmosDbAccountName = 'cosmos-${uniqueString(resourceGroup().id)}'
-var databaseName = 'BookJournal'
-var containerName = 'JournalEntries'
-
 param appServicePlanSku string = 'F1'
-var appServicePlanName = 'appServicePlan-${uniqueString(resourceGroup().id)}'
-var webAppName = 'bookJournalWebApp-${uniqueString(resourceGroup().id)}'
-var linuxFxVersion = 'PYTHON|3.8'
-var appInsightsName = 'bookJournalAI-${uniqueString(resourceGroup().id)}'
 
 param B2C_TENANT string
 param B2C_CLIENT_ID string
+@secure()
+param B2C_CLIENT_SECRET string
+
 param DOCKER_REGISTRY_SERVER_URL string
 param DOCKER_REGISTRY_SERVER_USERNAME string
 @secure()
 param DOCKER_REGISTRY_SERVER_PASSWORD string
 
+param OPENAI_ENDPOINT string
 @secure()
-param B2C_CLIENT_SECRET string
+param OPENAI_API_KEY string
+
+var cosmosDbAccountName = 'cosmos-${uniqueString(resourceGroup().id)}'
+var databaseName = 'BookJournal'
+var containerName = 'JournalEntries'
+
+var appServicePlanName = 'appServicePlan-${uniqueString(resourceGroup().id)}'
+var webAppName = 'bookJournalWebApp-${uniqueString(resourceGroup().id)}'
+var linuxFxVersion = 'PYTHON|3.8'
+var appInsightsName = 'bookJournalAI-${uniqueString(resourceGroup().id)}'
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: appServicePlanName
@@ -96,6 +101,14 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
         {
           name: 'XDT_MicrosoftApplicationInsights_Mode'
           value: 'default'
+        }
+        {
+          name: 'OPENAI_ENDPOINT'
+          value: OPENAI_ENDPOINT
+        }
+        {
+          name: 'OPENAI_API_KEY'
+          value: OPENAI_API_KEY
         }
       ]
     }
