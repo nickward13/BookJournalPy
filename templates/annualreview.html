@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Book Journal{% endblock %}
+{% block content %}
+ 
+<h1 style="margin-top: 50px;" class="ui center aligned header">Book Journal Annual Review</h1>
+
+{% if user %}
+<p align="right">
+    <a href="/"><button class="ui button">Home</button></a>
+</p>
+
+<!-- show the review -->
+<div class="ui segment">
+    <p>
+        {{ review|safe }}
+    </p>
+</div>
+
+{% endif %}
+
+{% endblock %}
