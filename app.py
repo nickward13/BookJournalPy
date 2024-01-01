@@ -1,10 +1,11 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, session
-from flask_session import Session
-from uuid import UUID, uuid4
 import json
 import msal
 import app_config
+
+from flask import Flask, render_template, request, redirect, url_for, session
+from flask_session import Session
+from uuid import UUID, uuid4
 
 # for App Insights
 import logging
